@@ -958,16 +958,18 @@ export default function AppPage() {
                   {currentPlayer.currentTurn.map((dart, i) => (
                     <div 
                       key={i} 
-                      className={`font-mono text-24 font-bold ${
-                        dart.isHit ? 'text-[#10B981]' : 'text-[#F97316]'
+                      className={`w-10 h-10 rounded border-2 flex items-center justify-center font-mono text-18 font-bold ${
+                        dart.isHit 
+                          ? 'bg-[#10B981]/20 border-[#10B981] text-[#10B981]' 
+                          : 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
                       }`}
                     >
-                      [{dart.value}]
+                      {dart.value}
                     </div>
                   ))}
                   {Array.from({ length: 3 - currentPlayer.currentTurn.length }).map((_, i) => (
-                    <div key={i} className="font-mono text-24 font-bold text-text-secondary/30">
-                      [ ]
+                    <div key={i} className="w-10 h-10 rounded border-2 border-dashed border-text-secondary/30 flex items-center justify-center">
+                      <span className="text-text-secondary/30 text-14">—</span>
                     </div>
                   ))}
                 </div>
