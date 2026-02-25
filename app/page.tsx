@@ -148,7 +148,12 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <Link href="#features" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Features</Link>
             <Link href="#pricing" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</Link>
-            <Link href="/about" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">About</Link>
+            <Link href="/login" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Login</Link>
+            <Link href="/signup">
+              <Button variant="outline" className="border-[#7C3AED] text-[#7C3AED] hover:bg-[#7C3AED]/10 px-6">
+                Sign Up
+              </Button>
+            </Link>
             <Link href="/app">
               <Button className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white px-6">
                 Play Now
@@ -172,11 +177,16 @@ export default function Home() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Link href="#features" className="block text-gray-300 hover:text-white py-2">Features</Link>
-            <Link href="#pricing" className="block text-gray-300 hover:text-white py-2">Pricing</Link>
-            <Link href="/about" className="block text-gray-300 hover:text-white py-2">About</Link>
+            <Link href="#features" className="block text-gray-300 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Features</Link>
+            <Link href="#pricing" className="block text-gray-300 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
+            <Link href="/login" className="block text-gray-300 hover:text-white py-2">Login</Link>
+            <Link href="/signup">
+              <Button variant="outline" className="w-full border-[#7C3AED] text-[#7C3AED] hover:bg-[#7C3AED]/10 mt-2">
+                Sign Up
+              </Button>
+            </Link>
             <Link href="/app">
-              <Button className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white mt-4">
+              <Button className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white mt-2">
                 Play Now
               </Button>
             </Link>
