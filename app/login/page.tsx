@@ -1,144 +1,142 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target } from "lucide-react";
+import Link from "next/link";
+import { Target, ArrowRight, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Auth logic will be added later
-    console.log("Login:", { email, password });
-  };
+    setError("");
+    setLoading(true);
 
-  const handleGoogleLogin = () => {
-    // Google OAuth will be added later
-    console.log("Google login");
-  };
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-  const handleGuestContinue = () => {
-    window.location.href = "/app";
+      if (res?.error) {
+        setError("Invalid email or password");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      setError("Something went wrong");
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <Target className="w-8 h-8 text-[#7C3AED]" />
-            <span className="text-2xl font-display font-bold">
-              <span className="text-[#7C3AED]">Oche</span>Score
-            </span>
-          </Link>
-          <h1 className="font-display text-32 font-bold mt-4">Welcome Back</h1>
-          <p className="text-text-secondary mt-2">Log in to your account</p>
-        </div>
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+      {/* Background effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#7C3AED]/10 rounded-full blur-[128px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#F97316]/10 rounded-full blur-[100px]" />
+      </div>
 
-        <Card className="bg-surface border-white/10">
-          <CardHeader>
-            <CardTitle>Log In</CardTitle>
-            <CardDescription>Access your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-14 font-medium mb-2">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md relative"
+      >
+        {/* Logo */}
+        <Link href="/" className="flex items-center justify-center gap-2 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#F97316] flex items-center justify-center">
+            <Target className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-2xl font-bold">OcheScore</span>
+        </Link>
 
-              <div>
-                <label htmlFor="password" className="block text-14 font-medium mb-2">
-                  Password
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <div className="text-right mt-1">
-                  <a href="#" className="text-12 text-[#7C3AED] hover:underline">
-                    Forgot password?
-                  </a>
-                </div>
-              </div>
+        {/* Form Card */}
+        <div className="bg-[#111] border border-white/10 rounded-2xl p-8">
+          <h1 className="text-2xl font-bold text-center mb-2">Welcome back</h1>
+          <p className="text-gray-500 text-center mb-8">
+            Sign in to your account
+          </p>
 
-              <Button type="submit" className="w-full bg-[#7C3AED] hover:bg-[#6D28D9]">
-                Log In
-              </Button>
-            </form>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
-              </div>
-              <div className="relative flex justify-center text-12">
-                <span className="bg-surface px-2 text-text-secondary">OR</span>
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Email
+              </label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="bg-[#0a0a0a] border-white/10 focus:border-[#7C3AED]"
+              />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Password
+              </label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="bg-[#0a0a0a] border-white/10 focus:border-[#7C3AED]"
+              />
+            </div>
+
+            {error && (
+              <div className="text-red-500 text-sm text-center bg-red-500/10 py-2 rounded-lg">
+                {error}
+              </div>
+            )}
 
             <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] py-6 text-lg"
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Continue with Google
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  Sign In
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </>
+              )}
             </Button>
+          </form>
 
-            <div className="mt-6">
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={handleGuestContinue}
-              >
-                Continue as Guest →
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <p className="text-center text-gray-500 mt-6">
+            Don't have an account?{" "}
+            <Link href="/signup" className="text-[#7C3AED] hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </div>
 
-        <p className="text-center text-14 text-text-secondary mt-6">
-          Don't have an account?{" "}
-          <Link href="/signup" className="text-[#7C3AED] hover:underline">
-            Sign up
+        {/* Guest play link */}
+        <p className="text-center text-gray-600 mt-6">
+          Or{" "}
+          <Link href="/app" className="text-[#F97316] hover:underline">
+            play as guest
           </Link>
+          {" "}without an account
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
