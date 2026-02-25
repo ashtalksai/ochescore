@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Dartboard } from "@/components/dartboard";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 import { ArrowLeft, Undo, Target, Trophy, TrendingUp, Percent, BarChart3 } from "lucide-react";
+import { useGameApi, DbPlayer } from "@/lib/hooks/use-game-api";
 
 type GameMode = "x01" | "round-the-clock" | null;
 type X01Variant = 301 | 501 | 101;
@@ -74,22 +75,42 @@ export default function AppPage() {
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState<Player | null>(null);
   const [savedPlayerNames, setSavedPlayerNames] = useState<string[]>([]);
+  const [dbPlayers, setDbPlayers] = useState<DbPlayer[]>([]);
+  const [currentGameId, setCurrentGameId] = useState<string | null>(null);
+  const playerIdMapRef = useRef<Map<string, string>>(new Map()); // name -> dbPlayerId
+  
+  const { fetchPlayers, createPlayer: createDbPlayer, createGame, endGame } = useGameApi();
 
-  // Load saved player names from localStorage
+  // Load saved players from database
   useEffect(() => {
-    const saved = localStorage.getItem('ochescore-players');
-    if (saved) {
-      setSavedPlayerNames(JSON.parse(saved));
-    }
-  }, []);
+    const loadPlayers = async () => {
+      const players = await fetchPlayers();
+      setDbPlayers(players);
+      setSavedPlayerNames(players.map(p => p.name));
+      // Build name -> id map
+      players.forEach(p => playerIdMapRef.current.set(p.name, p.id));
+    };
+    loadPlayers();
+  }, [fetchPlayers]);
 
-  // Save player name to localStorage when game starts
-  const savePlayerName = (name: string) => {
-    if (name && name !== 'Player 1' && !savedPlayerNames.includes(name)) {
-      const updated = [...savedPlayerNames, name].slice(-10); // Keep last 10
-      setSavedPlayerNames(updated);
-      localStorage.setItem('ochescore-players', JSON.stringify(updated));
+  // Create player in DB if doesn't exist
+  const ensurePlayerInDb = async (name: string): Promise<string | null> => {
+    if (!name || name === 'Player 1') return null;
+    
+    // Check if already in map
+    if (playerIdMapRef.current.has(name)) {
+      return playerIdMapRef.current.get(name) || null;
     }
+    
+    // Create in DB
+    const newPlayer = await createDbPlayer(name);
+    if (newPlayer) {
+      playerIdMapRef.current.set(name, newPlayer.id);
+      setDbPlayers(prev => [...prev, newPlayer]);
+      setSavedPlayerNames(prev => [...prev, name]);
+      return newPlayer.id;
+    }
+    return null;
   };
 
   // Calculate stats for a player
@@ -198,9 +219,34 @@ export default function AppPage() {
     setPlayers(updated);
   };
 
-  const startGame = () => {
-    // Save player names to localStorage
-    players.forEach(p => savePlayerName(p.name));
+  const startGame = async () => {
+    // Ensure all players exist in DB and get their IDs
+    const playerIds: string[] = [];
+    for (const p of players) {
+      const id = await ensurePlayerInDb(p.name);
+      if (id) playerIds.push(id);
+    }
+    
+    // Create game in DB if we have player IDs
+    if (playerIds.length > 0) {
+      const rtcEndModeMap: Record<string, "BULLSEYE" | "TWENTY" | "TEN"> = {
+        "bullseye": "BULLSEYE",
+        "20": "TWENTY",
+        "10": "TEN",
+      };
+      
+      const game = await createGame({
+        mode: gameMode === "x01" ? "X01" : "ROUND_THE_CLOCK",
+        playerIds,
+        startingScore: gameMode === "x01" ? x01Variant : undefined,
+        doubleOut: outType === "double",
+        rtcEndMode: gameMode === "round-the-clock" ? rtcEndModeMap[clockEndType] : undefined,
+      });
+      
+      if (game) {
+        setCurrentGameId(game.id);
+      }
+    }
     
     const initializedPlayers = players.map(p => ({
       ...createPlayer(p.name, x01Variant),
@@ -287,6 +333,12 @@ export default function AppPage() {
         updatedPlayers[currentPlayerIndex] = updatedPlayer;
         setPlayers(updatedPlayers);
         setWinner(updatedPlayer);
+        
+        // Save game result to DB
+        const winnerId = playerIdMapRef.current.get(updatedPlayer.name);
+        if (currentGameId && winnerId) {
+          endGame(currentGameId, "COMPLETED", winnerId);
+        }
         
         confetti({
           particleCount: 100,
@@ -397,6 +449,13 @@ export default function AppPage() {
       
       if (hasWon) {
         setWinner(updatedPlayer);
+        
+        // Save game result to DB
+        const winnerId = playerIdMapRef.current.get(updatedPlayer.name);
+        if (currentGameId && winnerId) {
+          endGame(currentGameId, "COMPLETED", winnerId);
+        }
+        
         confetti({
           particleCount: 100,
           spread: 70,
@@ -619,18 +678,23 @@ export default function AppPage() {
           <div className="mb-8">
             <h3 className="text-20 font-bold mb-4">Players ({players.length}/4)</h3>
             
-            {/* Saved player quick picks */}
-            {savedPlayerNames.length > 0 && (
+            {/* Saved player quick picks with stats */}
+            {dbPlayers.length > 0 && (
               <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">Quick pick:</p>
+                <p className="text-sm text-gray-400 mb-2">Quick pick (tap to add):</p>
                 <div className="flex flex-wrap gap-2">
-                  {savedPlayerNames.map((name, i) => (
+                  {dbPlayers.map((p, i) => (
                     <button
                       key={i}
-                      onClick={() => selectSavedPlayer(players.length - 1, name)}
-                      className="px-3 py-1 text-sm bg-[#7C3AED]/20 hover:bg-[#7C3AED]/40 rounded-full text-[#7C3AED] transition-colors"
+                      onClick={() => selectSavedPlayer(players.length - 1, p.name)}
+                      className="px-3 py-1.5 text-sm bg-[#7C3AED]/20 hover:bg-[#7C3AED]/40 rounded-full text-[#7C3AED] transition-colors flex items-center gap-2"
                     >
-                      {name}
+                      <span>{p.name}</span>
+                      {p.gamesPlayed > 0 && (
+                        <span className="text-xs text-gray-400">
+                          {p.gamesWon}W/{p.gamesPlayed - p.gamesWon}L
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
