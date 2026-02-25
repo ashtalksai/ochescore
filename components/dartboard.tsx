@@ -79,7 +79,7 @@ export function Dartboard({
 
   // Generate dartboard segments
   const segments = DARTBOARD_NUMBERS.map((number, index) => {
-    const angle = (index * 18) - 81; // 18 degrees per segment, offset to start at top
+    const angle = (index * 18) - 99; // 18 degrees per segment, offset so 20 is centered at top (-90°)
     const nextAngle = angle + 18;
 
     // Check if this number should be highlighted
