@@ -1,616 +1,299 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { 
-  Rocket, 
-  Calendar, 
-  Target,
-  Users,
-  DollarSign,
-  TrendingUp,
-  CheckCircle2,
-  MessageSquare,
-  Facebook,
-  Youtube,
-  Search,
-  Zap
-} from "lucide-react";
-
-const fadeIn = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
+const colors = {
+  bgPrimary: '#0f1419',
+  bgSecondary: '#1a2129',
+  bgSurface: '#242d38',
+  textPrimary: '#f5f5f0',
+  textSecondary: '#9ca3af',
+  textMuted: '#6b7280',
+  accentPurple: '#7C3AED',
+  accentGreen: '#2d4a3e',
+  accentOrange: '#F97316',
+}
 
 export default function GTMPage() {
   return (
-    <div className="min-h-screen py-12 px-6 lg:px-12">
-      <div className="max-w-5xl mx-auto space-y-16">
-        
-        {/* Launch Overview */}
-        <motion.section {...fadeIn} className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#7C3AED]/20 via-transparent to-[#F97316]/20 rounded-2xl" />
-          <div className="relative p-8 lg:p-12">
-            <div className="flex items-center gap-4 mb-6">
-              <Rocket className="w-12 h-12 text-[#F97316]" />
-              <div>
-                <h1 className="font-display text-4xl lg:text-5xl font-bold">Launch Overview</h1>
-                <p className="text-text-secondary">Go-to-Market Strategy</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <Calendar className="w-6 h-6 text-[#7C3AED] mb-2" />
-                <span className="text-sm text-text-secondary">Launch Date</span>
-                <div className="text-xl font-semibold">March 1, 2026</div>
-              </div>
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <Users className="w-6 h-6 text-[#7C3AED] mb-2" />
-                <span className="text-sm text-text-secondary">Target Audience</span>
-                <div className="text-xl font-semibold">Pub Players</div>
-              </div>
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <Target className="w-6 h-6 text-[#7C3AED] mb-2" />
-                <span className="text-sm text-text-secondary">90-Day Goal</span>
-                <div className="text-xl font-semibold">1,000 Players</div>
-              </div>
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <DollarSign className="w-6 h-6 text-success mb-2" />
-                <span className="text-sm text-text-secondary">MRR Target</span>
-                <div className="text-xl font-semibold text-success">$250</div>
-              </div>
-            </div>
+    <div className="space-y-12">
+      {/* Launch Overview - Hero */}
+      <section 
+        className="relative rounded-2xl p-8 md:p-12 overflow-hidden"
+        style={{ 
+          background: `linear-gradient(135deg, ${colors.accentOrange}30 0%, ${colors.bgSurface} 100%)`
+        }}
+      >
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🎯</span>
+            <span className="text-sm uppercase tracking-widest" style={{ color: colors.accentOrange }}>
+              Go-To-Market Plan
+            </span>
+          </div>
+          
+          <h1 className="font-serif text-4xl md:text-5xl mb-6" style={{ color: colors.textPrimary }}>
+            Score like a pro
+          </h1>
+          
+          <p className="text-xl mb-8 max-w-2xl" style={{ color: colors.textSecondary }}>
+            Launch strategy for OcheScore — targeting dart enthusiasts from casual pub players 
+            to competitive league members who want effortless scoring.
+          </p>
 
-            {/* Milestone Timeline */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { period: "Week 1", target: "100", metric: "Soft launch (Reddit)" },
-                { period: "Month 1", target: "500", metric: "Organic + ProductHunt" },
-                { period: "Month 3", target: "1,000", metric: "SEO + paid ads test" },
-                { period: "Month 6", target: "3,000", metric: "Scaling winners" },
-              ].map((milestone, i) => (
-                <div key={i} className="relative">
-                  <div className="bg-[#7C3AED]/20 rounded-xl p-4 border border-[#7C3AED]/30">
-                    <span className="text-xs text-[#7C3AED] font-semibold uppercase">{milestone.period}</span>
-                    <div className="text-2xl font-mono font-bold text-white">{milestone.target}</div>
-                    <span className="text-xs text-text-secondary">{milestone.metric}</span>
-                  </div>
-                  {i < 3 && (
-                    <div className="hidden md:block absolute top-1/2 -right-2 w-4 h-0.5 bg-[#7C3AED]/50" />
-                  )}
-                </div>
-              ))}
+          {/* Launch metrics */}
+          <div className="grid grid-cols-3 gap-4 max-w-xl">
+            <div className="p-4 rounded-xl" style={{ backgroundColor: colors.bgPrimary }}>
+              <div className="text-xs mb-1" style={{ color: colors.textMuted }}>Launch Target</div>
+              <div className="text-2xl font-mono font-bold" style={{ color: colors.accentOrange }}>Day 1</div>
+              <div className="text-xs" style={{ color: colors.textMuted }}>500 downloads</div>
+            </div>
+            <div className="p-4 rounded-xl" style={{ backgroundColor: colors.bgPrimary }}>
+              <div className="text-xs mb-1" style={{ color: colors.textMuted }}>Month 1 Goal</div>
+              <div className="text-2xl font-mono font-bold" style={{ color: colors.accentOrange }}>10K</div>
+              <div className="text-xs" style={{ color: colors.textMuted }}>active users</div>
+            </div>
+            <div className="p-4 rounded-xl" style={{ backgroundColor: colors.bgPrimary }}>
+              <div className="text-xs mb-1" style={{ color: colors.textMuted }}>Premium Conv.</div>
+              <div className="text-2xl font-mono font-bold" style={{ color: colors.accentOrange }}>5%</div>
+              <div className="text-xs" style={{ color: colors.textMuted }}>target rate</div>
             </div>
           </div>
-        </motion.section>
+        </div>
+      </section>
 
-        {/* 90-Day Timeline */}
-        <motion.section {...fadeIn} transition={{ delay: 0.1 }}>
-          <h2 className="font-display text-3xl font-bold mb-8 flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-[#7C3AED]" />
-            90-Day Timeline
-          </h2>
+      {/* 90-Day Timeline */}
+      <section>
+        <h2 className="font-serif text-2xl mb-6 flex items-center gap-3" style={{ color: colors.textPrimary }}>
+          <span>📅</span> 90-Day Timeline
+        </h2>
 
-          <div className="space-y-8">
-            {/* Week 1 */}
-            <div className="relative pl-8 border-l-2 border-[#7C3AED]">
-              <div className="absolute -left-3 top-0 w-6 h-6 bg-[#7C3AED] rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold">1</span>
+        <div className="space-y-4">
+          {/* Week 1 */}
+          <div className="flex gap-4">
+            <div className="w-1 rounded-full" style={{ backgroundColor: colors.accentPurple }} />
+            <div className="flex-1 p-6 rounded-xl" style={{ backgroundColor: colors.bgSurface }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-mono text-sm" style={{ color: colors.accentPurple }}>WEEK 1</span>
+                <span className="px-3 py-1 rounded-full text-xs" style={{ backgroundColor: colors.accentPurple, color: colors.textPrimary }}>Community Seeding</span>
               </div>
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div>
-                    <span className="text-[#F97316] font-semibold">Week 1: Soft Launch</span>
-                    <h3 className="text-xl font-semibold">Mar 1-7</h3>
-                  </div>
-                  <div className="flex items-center gap-2 bg-[#7C3AED]/20 px-4 py-2 rounded-full">
-                    <Target className="w-4 h-4 text-[#7C3AED]" />
-                    <span className="text-sm font-mono">100 players</span>
-                  </div>
-                </div>
-                <p className="text-text-secondary mb-4">Validate product-market fit with 100 early adopters</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>Post to r/Darts: "I built the dart scoring app I wish existed"</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>Share in 5 Facebook dart groups</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>Email 20 friends who play darts</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>Set up Google Analytics + Hotjar</span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <span className="text-xs text-text-secondary">Success: 100 players, 300+ games, &lt;5% bounce, 5+ shares</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Week 2-4 */}
-            <div className="relative pl-8 border-l-2 border-[#7C3AED]">
-              <div className="absolute -left-3 top-0 w-6 h-6 bg-[#7C3AED] rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold">2</span>
-              </div>
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div>
-                    <span className="text-[#F97316] font-semibold">Week 2-4: Community Growth</span>
-                    <h3 className="text-xl font-semibold">Mar 8-31</h3>
-                  </div>
-                  <div className="flex items-center gap-2 bg-[#7C3AED]/20 px-4 py-2 rounded-full">
-                    <Target className="w-4 h-4 text-[#7C3AED]" />
-                    <span className="text-sm font-mono">500 players</span>
-                  </div>
-                </div>
-                <p className="text-text-secondary mb-4">Reach 500 players through organic channels</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>Weekly posts to r/Darts (tutorials, tips, updates)</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>Facebook Groups: Screenshots, feedback requests</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>YouTube: Comment on dart tutorials with subtle mentions</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>ProductHunt launch (aim for top 10 of the day)</span>
-                  </div>
-                </div>
-                <div className="mt-4 p-4 bg-[#7C3AED]/10 rounded-lg">
-                  <span className="text-sm font-semibold">Content Mix:</span>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="px-2 py-1 bg-[#7C3AED]/20 rounded text-xs">40% Educational</span>
-                    <span className="px-2 py-1 bg-[#F97316]/20 rounded text-xs">30% Updates</span>
-                    <span className="px-2 py-1 bg-success/20 rounded text-xs">20% User Stories</span>
-                    <span className="px-2 py-1 bg-white/10 rounded text-xs">10% Promo</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Month 2-3 */}
-            <div className="relative pl-8 border-l-2 border-[#7C3AED]">
-              <div className="absolute -left-3 top-0 w-6 h-6 bg-[#7C3AED] rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold">3</span>
-              </div>
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div>
-                    <span className="text-[#F97316] font-semibold">Month 2-3: SEO + Paid Ads Test</span>
-                    <h3 className="text-xl font-semibold">Apr 1 - May 31</h3>
-                  </div>
-                  <div className="flex items-center gap-2 bg-[#7C3AED]/20 px-4 py-2 rounded-full">
-                    <Target className="w-4 h-4 text-[#7C3AED]" />
-                    <span className="text-sm font-mono">1,000 players</span>
-                  </div>
-                </div>
-                <p className="text-text-secondary mb-4">Scale to 1,000 players, test paid acquisition</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>SEO: 8 blog posts targeting dart keywords</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>Google Ads test: $300 budget</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>YouTube sponsorships: 10 channels @ $50-200 each</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#7C3AED] flex-shrink-0 mt-0.5" />
-                    <span>League partnerships: 5 trials with free Pro tier</span>
-                  </div>
-                </div>
-                <div className="mt-4 p-4 bg-success/10 rounded-lg border border-success/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-success">Budget: $800</span>
-                    <span className="text-sm text-text-secondary">Google Ads $300 + YouTube $500</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Month 4-6 */}
-            <div className="relative pl-8 border-l-2 border-[#7C3AED]">
-              <div className="absolute -left-3 top-0 w-6 h-6 bg-[#F97316] rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold">4</span>
-              </div>
-              <div className="bg-surface rounded-xl p-6 border border-white/10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div>
-                    <span className="text-[#F97316] font-semibold">Month 4-6: Scaling Winners</span>
-                    <h3 className="text-xl font-semibold">Jun 1 - Aug 31</h3>
-                  </div>
-                  <div className="flex items-center gap-2 bg-[#F97316]/20 px-4 py-2 rounded-full">
-                    <Target className="w-4 h-4 text-[#F97316]" />
-                    <span className="text-sm font-mono">3,000 players</span>
-                  </div>
-                </div>
-                <p className="text-text-secondary mb-4">Double down on winning channels</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#F97316] flex-shrink-0 mt-0.5" />
-                    <span>If Reddit works → Expand to related subreddits</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#F97316] flex-shrink-0 mt-0.5" />
-                    <span>If SEO works → 12 more blog posts, build backlinks</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#F97316] flex-shrink-0 mt-0.5" />
-                    <span>If YouTube works → Sponsor 5 more, own channel</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#F97316] flex-shrink-0 mt-0.5" />
-                    <span>Launch referral: "Invite 3, get 1 month Pro free"</span>
-                  </div>
-                </div>
-                <div className="mt-4 p-4 bg-[#F97316]/10 rounded-lg border border-[#F97316]/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-[#F97316]">Budget: $2,300/mo</span>
-                    <span className="text-sm text-text-secondary">Best channel $1,500 + Second $500 + Experiments $300</span>
-                  </div>
-                </div>
-              </div>
+              <h3 className="font-bold mb-2" style={{ color: colors.textPrimary }}>Reddit & Discord Launch</h3>
+              <ul className="grid md:grid-cols-2 gap-2 text-sm" style={{ color: colors.textSecondary }}>
+                <li>• Post in r/darts with value-first content</li>
+                <li>• Create OcheScore Discord server</li>
+                <li>• Reach out to dart YouTubers</li>
+                <li>• Seed discussions in dart Facebook groups</li>
+                <li>• Engage with comments, gather feedback</li>
+              </ul>
             </div>
           </div>
-        </motion.section>
 
-        {/* Channel Strategy */}
-        <motion.section {...fadeIn} transition={{ delay: 0.2 }}>
-          <h2 className="font-display text-3xl font-bold mb-8 flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-[#F97316]" />
-            Channel Strategy
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Reddit */}
-            <div className="bg-surface rounded-xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#FF4500] rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Reddit (r/Darts)</h3>
-                  <span className="text-xs text-[#7C3AED]">40% of effort</span>
-                </div>
+          {/* Week 2-4 */}
+          <div className="flex gap-4">
+            <div className="w-1 rounded-full" style={{ backgroundColor: colors.accentOrange }} />
+            <div className="flex-1 p-6 rounded-xl" style={{ backgroundColor: colors.bgSurface }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-mono text-sm" style={{ color: colors.accentOrange }}>WEEK 2-4</span>
+                <span className="px-3 py-1 rounded-full text-xs" style={{ backgroundColor: colors.accentOrange, color: colors.bgPrimary }}>App Store Launch</span>
               </div>
-              <p className="text-text-secondary text-sm mb-4">180K members, high intent, free, proven engagement</p>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Week 1</span>
-                  <span>Launch post</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Week 2</span>
-                  <span>Tutorial</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Week 3</span>
-                  <span>Feedback request</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Week 4</span>
-                  <span>User showcase</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Expected</span>
-                  <span className="text-success font-mono">300 signups/mo</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Cost</span>
-                  <span className="text-success font-mono">$0</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Facebook */}
-            <div className="bg-surface rounded-xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#1877F2] rounded-lg flex items-center justify-center">
-                  <Facebook className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Facebook Groups</h3>
-                  <span className="text-xs text-[#7C3AED]">20% of effort</span>
-                </div>
-              </div>
-              <p className="text-text-secondary text-sm mb-4">500K+ dart players in groups, community-driven</p>
-              <div className="space-y-1 text-sm text-text-secondary">
-                <div>• UK Darts Community (80K)</div>
-                <div>• Darts Players United (50K)</div>
-                <div>• American Darts Organization (40K)</div>
-                <div>• Pub Darts League (30K)</div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Expected</span>
-                  <span className="text-success font-mono">150 signups/mo</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Cost</span>
-                  <span className="text-success font-mono">$0</span>
-                </div>
-              </div>
-            </div>
-
-            {/* SEO */}
-            <div className="bg-surface rounded-xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#4285F4] rounded-lg flex items-center justify-center">
-                  <Search className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">SEO (Blog)</h3>
-                  <span className="text-xs text-[#7C3AED]">15% of effort</span>
-                </div>
-              </div>
-              <p className="text-text-secondary text-sm mb-4">40K monthly searches, long-term compounding</p>
-              <div className="space-y-1 text-sm text-text-secondary">
-                <div>• "dart scoring app" (12K/mo)</div>
-                <div>• "best dart scorer" (8K/mo)</div>
-                <div>• "how to score darts" (22K/mo)</div>
-                <div>• 8 posts targeting these keywords</div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Expected</span>
-                  <span className="text-success font-mono">100 signups (M2-3)</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Cost</span>
-                  <span className="text-success font-mono">$0 (DIY)</span>
-                </div>
-              </div>
-            </div>
-
-            {/* YouTube */}
-            <div className="bg-surface rounded-xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#FF0000] rounded-lg flex items-center justify-center">
-                  <Youtube className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">YouTube Sponsorships</h3>
-                  <span className="text-xs text-[#7C3AED]">10% of effort</span>
-                </div>
-              </div>
-              <p className="text-text-secondary text-sm mb-4">Dart YouTube community is engaged</p>
-              <div className="space-y-1 text-sm text-text-secondary">
-                <div>• Flight School Darts (200K subs)</div>
-                <div>• DartsDudes (150K subs)</div>
-                <div>• OneHundredAndEighty (100K subs)</div>
-                <div>• $50-200/video if paid</div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Expected</span>
-                  <span className="text-success font-mono">50/video mention</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Cost</span>
-                  <span className="font-mono">$0-500</span>
-                </div>
-              </div>
-            </div>
-
-            {/* ProductHunt */}
-            <div className="bg-surface rounded-xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#DA552F] rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">ProductHunt</h3>
-                  <span className="text-xs text-[#7C3AED]">10% of effort</span>
-                </div>
-              </div>
-              <p className="text-text-secondary text-sm mb-4">Tech-savvy audience, viral potential</p>
-              <div className="space-y-1 text-sm text-text-secondary">
-                <div>• Launch Tuesday or Wednesday</div>
-                <div>• 5 friends upvote + comment in first hour</div>
-                <div>• Find hunter with 1K+ followers</div>
-                <div>• Engage in comments all day</div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Expected</span>
-                  <span className="text-success font-mono">200 signups (launch day)</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Cost</span>
-                  <span className="text-success font-mono">$0</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Google Ads */}
-            <div className="bg-surface rounded-xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#34A853] rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Google Ads (Test)</h3>
-                  <span className="text-xs text-[#F97316]">5% of effort</span>
-                </div>
-              </div>
-              <p className="text-text-secondary text-sm mb-4">High intent, fast feedback, test only</p>
-              <div className="space-y-1 text-sm text-text-secondary">
-                <div>• "dart scoring app" (exact match)</div>
-                <div>• "free dart counter" (phrase match)</div>
-                <div>• Headline: "Free Dart Scoring App"</div>
-                <div>• $300 budget in Month 2</div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Expected</span>
-                  <span className="font-mono">60 signups</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Cost</span>
-                  <span className="font-mono">$300 ($5 CPC)</span>
-                </div>
-              </div>
+              <h3 className="font-bold mb-2" style={{ color: colors.textPrimary }}>Product Hunt + Influencer Push</h3>
+              <ul className="grid md:grid-cols-2 gap-2 text-sm" style={{ color: colors.textSecondary }}>
+                <li>• Tuesday: Product Hunt launch</li>
+                <li>• Partner with 3-5 dart YouTubers</li>
+                <li>• TikTok dart trick shot content</li>
+                <li>• Instagram Reels showing checkout hints</li>
+                <li>• First metrics review & iterate</li>
+                <li>• Respond to all app store reviews</li>
+              </ul>
             </div>
           </div>
-        </motion.section>
 
-        {/* Pricing & Monetization */}
-        <motion.section {...fadeIn} transition={{ delay: 0.3 }}>
-          <h2 className="font-display text-3xl font-bold mb-8 flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-success" />
-            Pricing & Monetization
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Free Tier */}
-            <div className="bg-surface rounded-xl p-6 border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold">Free Tier</h3>
-                <span className="text-2xl font-mono font-bold">$0</span>
+          {/* Month 2-3 */}
+          <div className="flex gap-4">
+            <div className="w-1 rounded-full" style={{ backgroundColor: colors.accentGreen }} />
+            <div className="flex-1 p-6 rounded-xl" style={{ backgroundColor: colors.bgSurface }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-mono text-sm" style={{ color: colors.accentGreen }}>MONTH 2-3</span>
+                <span className="px-3 py-1 rounded-full text-xs" style={{ backgroundColor: colors.accentGreen, color: colors.textPrimary }}>Growth & Optimization</span>
               </div>
-              <p className="text-text-secondary text-sm mb-4">Forever free. Build trust, remove friction.</p>
-              <div className="space-y-2">
-                {[
-                  "All game modes (X01 + Round-the-Clock)",
-                  "Interactive dartboard",
-                  "Up to 4 players",
-                  "Session stats & checkout hints",
-                  "No account required",
-                ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-success" />
-                    <span>{feature}</span>
-                  </div>
+              <h3 className="font-bold mb-2" style={{ color: colors.textPrimary }}>Scale Winners, Launch Premium</h3>
+              <ul className="grid md:grid-cols-2 gap-2 text-sm" style={{ color: colors.textSecondary }}>
+                <li>• Analyze which channels drove downloads</li>
+                <li>• Launch premium tier with advanced stats</li>
+                <li>• Partner with local dart leagues</li>
+                <li>• Reach out to pub chains for B2B</li>
+                <li>• Email marketing for premium upsells</li>
+                <li>• Tournament feature beta launch</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Channel Mix */}
+      <section>
+        <h2 className="font-serif text-2xl mb-6 flex items-center gap-3" style={{ color: colors.textPrimary }}>
+          <span>📣</span> Channel Mix
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {[
+            {
+              name: 'Reddit',
+              budget: '35%',
+              icon: '🔴',
+              desc: 'r/darts + r/dartsleague',
+              expected: '5,000+ profile visits, 2K downloads',
+              tactics: ['Value-first posts', 'Checkout tip threads', 'AMAs with dart players']
+            },
+            {
+              name: 'YouTube',
+              budget: '30%',
+              icon: '📺',
+              desc: 'Dart tutorial creators',
+              expected: '50K views, 3K downloads',
+              tactics: ['Sponsored tutorials', 'Integration demos', 'Tournament coverage']
+            },
+            {
+              name: 'TikTok/Reels',
+              budget: '20%',
+              icon: '📱',
+              desc: '#Darts content creators',
+              expected: '100K views, 1K downloads',
+              tactics: ['Trick shots with scores', '180 celebrations', 'Checkout path reveals']
+            },
+            {
+              name: 'Facebook Groups',
+              budget: '10%',
+              icon: '👥',
+              desc: 'Local dart leagues',
+              expected: '1K reached, 500 downloads',
+              tactics: ['League partnerships', 'Tournament features']
+            },
+            {
+              name: 'Product Hunt',
+              budget: '5%',
+              icon: '🚀',
+              desc: 'Tech-savvy early adopters',
+              expected: 'Top 10 product, 1K downloads',
+              tactics: ['Launch day all-hands', 'Premium code giveaway']
+            },
+          ].map((channel, i) => (
+            <div key={i} className="p-5 rounded-xl" style={{ backgroundColor: colors.bgSurface }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{channel.icon}</span>
+                  <span className="font-bold" style={{ color: colors.textPrimary }}>{channel.name}</span>
+                </div>
+                <span className="font-mono text-sm px-2 py-1 rounded" style={{ backgroundColor: colors.accentOrange, color: colors.bgPrimary }}>
+                  {channel.budget}
+                </span>
+              </div>
+              <p className="text-sm mb-2" style={{ color: colors.textMuted }}>{channel.desc}</p>
+              <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>{channel.expected}</p>
+              <div className="flex flex-wrap gap-2">
+                {channel.tactics.map((tactic, j) => (
+                  <span key={j} className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: colors.bgPrimary, color: colors.textMuted }}>
+                    {tactic}
+                  </span>
                 ))}
               </div>
             </div>
+          ))}
+        </div>
+      </section>
 
-            {/* Pro Tier */}
-            <div className="bg-gradient-to-br from-[#7C3AED] to-[#7C3AED]/80 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-white">Pro Tier</h3>
-                <div className="text-right">
-                  <span className="text-2xl font-mono font-bold text-white">$4.99</span>
-                  <span className="text-white/70">/mo</span>
+      {/* Budget */}
+      <section>
+        <h2 className="font-serif text-2xl mb-6 flex items-center gap-3" style={{ color: colors.textPrimary }}>
+          <span>💰</span> Budget Allocation
+        </h2>
+
+        <div className="p-6 rounded-xl" style={{ backgroundColor: colors.bgSurface }}>
+          <div className="space-y-4">
+            {[
+              { label: 'YouTube Sponsorships', amount: 2000, pct: 40 },
+              { label: 'TikTok/Instagram Ads', amount: 1500, pct: 30 },
+              { label: 'Reddit Ads', amount: 800, pct: 16 },
+              { label: 'App Store Optimization', amount: 500, pct: 10 },
+              { label: 'Tools & Design', amount: 200, pct: 4 },
+            ].map((item, i) => (
+              <div key={i}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span style={{ color: colors.textSecondary }}>{item.label}</span>
+                  <span className="font-mono" style={{ color: colors.textPrimary }}>${item.amount.toLocaleString()}</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: colors.bgPrimary }}>
+                  <div 
+                    className="h-full rounded-full"
+                    style={{ width: `${item.pct}%`, backgroundColor: colors.accentPurple }}
+                  />
                 </div>
               </div>
-              <p className="text-white/70 text-sm mb-4">14-day free trial. For serious players.</p>
-              <div className="space-y-2">
-                {[
-                  "Everything in Free",
-                  "Unlimited game history (cloud)",
-                  "Advanced stats & trends",
-                  "Export to CSV",
-                  "Cloud sync across devices",
-                  "Priority support (24h response)",
-                ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-white">
-                    <CheckCircle2 className="w-4 h-4 text-[#F97316]" />
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 pt-6 border-t flex justify-between items-center" style={{ borderColor: colors.bgPrimary }}>
+            <span className="font-bold" style={{ color: colors.textPrimary }}>Total Month 1</span>
+            <span className="text-2xl font-mono font-bold" style={{ color: colors.accentOrange }}>$5,000</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Milestones */}
+      <section>
+        <h2 className="font-serif text-2xl mb-6 flex items-center gap-3" style={{ color: colors.textPrimary }}>
+          <span>🏆</span> Milestones
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { period: 'Week 1', target: '500 downloads', metric: 'Day 1' },
+            { period: 'Month 1', target: '10K users', metric: '5% premium' },
+            { period: 'Month 3', target: '50K users', metric: '8% premium' },
+            { period: 'Month 6', target: '150K users', metric: '$25K MRR' },
+          ].map((milestone, i) => (
+            <div key={i} className="p-5 rounded-xl text-center" style={{ backgroundColor: colors.bgSurface }}>
+              <div className="text-xs uppercase tracking-wide mb-2" style={{ color: colors.textMuted }}>{milestone.period}</div>
+              <div className="text-xl font-bold mb-1" style={{ color: colors.textPrimary }}>{milestone.target}</div>
+              <div className="text-sm font-mono" style={{ color: colors.accentOrange }}>{milestone.metric}</div>
             </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Success Criteria */}
+      <section 
+        className="p-8 rounded-2xl"
+        style={{ backgroundColor: colors.accentPurple }}
+      >
+        <h2 className="font-serif text-2xl mb-6 flex items-center gap-3" style={{ color: colors.textPrimary }}>
+          <span>✅</span> Success Criteria
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          <div>
+            <h3 className="font-bold mb-3" style={{ color: colors.accentOrange }}>Awareness</h3>
+            <ul className="space-y-2 text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
+              <li>• 500K social impressions (M1)</li>
+              <li>• 50K app store views (M1)</li>
+              <li>• 4.5+ star rating maintained</li>
+            </ul>
           </div>
-        </motion.section>
-
-        {/* Budget Summary */}
-        <motion.section {...fadeIn} transition={{ delay: 0.4 }}>
-          <h2 className="font-display text-3xl font-bold mb-8">Budget Summary</h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="py-4 px-4 font-semibold">Month</th>
-                  <th className="py-4 px-4 font-semibold">Channels</th>
-                  <th className="py-4 px-4 font-semibold">Budget</th>
-                  <th className="py-4 px-4 font-semibold">Expected Signups</th>
-                  <th className="py-4 px-4 font-semibold">CAC</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-white/5">
-                  <td className="py-4 px-4 font-medium">Month 1</td>
-                  <td className="py-4 px-4 text-text-secondary">Reddit, Facebook, Communities</td>
-                  <td className="py-4 px-4 font-mono text-success">$0</td>
-                  <td className="py-4 px-4 font-mono">500</td>
-                  <td className="py-4 px-4 font-mono text-success">$0</td>
-                </tr>
-                <tr className="border-b border-white/5">
-                  <td className="py-4 px-4 font-medium">Month 2</td>
-                  <td className="py-4 px-4 text-text-secondary">SEO, ProductHunt, YouTube (organic)</td>
-                  <td className="py-4 px-4 font-mono text-success">$0</td>
-                  <td className="py-4 px-4 font-mono">300</td>
-                  <td className="py-4 px-4 font-mono text-success">$0</td>
-                </tr>
-                <tr className="border-b border-white/5">
-                  <td className="py-4 px-4 font-medium">Month 3</td>
-                  <td className="py-4 px-4 text-text-secondary">Google Ads (test), YouTube (paid)</td>
-                  <td className="py-4 px-4 font-mono">$800</td>
-                  <td className="py-4 px-4 font-mono">200</td>
-                  <td className="py-4 px-4 font-mono">$4</td>
-                </tr>
-                <tr className="bg-[#7C3AED]/10">
-                  <td className="py-4 px-4 font-bold">Total</td>
-                  <td className="py-4 px-4"></td>
-                  <td className="py-4 px-4 font-mono font-bold">$800</td>
-                  <td className="py-4 px-4 font-mono font-bold">1,000</td>
-                  <td className="py-4 px-4 font-mono font-bold text-success">$0.80</td>
-                </tr>
-              </tbody>
-            </table>
+          <div>
+            <h3 className="font-bold mb-3" style={{ color: colors.accentOrange }}>Engagement</h3>
+            <ul className="space-y-2 text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
+              <li>• 30% Day 7 retention</li>
+              <li>• 5 games avg per active user</li>
+              <li>• 20% share a game result</li>
+            </ul>
           </div>
-        </motion.section>
-
-        {/* Success Criteria */}
-        <motion.section {...fadeIn} transition={{ delay: 0.5 }}>
-          <div className="bg-gradient-to-br from-[#7C3AED] to-[#F97316] rounded-2xl p-8 lg:p-12">
-            <h2 className="font-display text-3xl font-bold text-white mb-8">Success Criteria</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {[
-                { period: "Week 1", metrics: ["100 players", "300 games", "<5% bounce", "5+ shares"] },
-                { period: "Month 1", metrics: ["500 players", "1,500 games", "10+ testimonials", "PH top 10"] },
-                { period: "Month 3", metrics: ["1,000 players", "5,000 games", "50 Pro subs", "<$10 CAC"] },
-                { period: "Month 6 🎯", metrics: ["3,000+ players", "15,000+ games", "150 Pro subs", "Cash flow+"] },
-              ].map((milestone, i) => (
-                <div key={i} className="bg-white/10 backdrop-blur rounded-xl p-5">
-                  <h3 className="font-semibold text-white mb-3">{milestone.period}</h3>
-                  <div className="space-y-2">
-                    {milestone.metrics.map((metric, j) => (
-                      <div key={j} className="flex items-center gap-2 text-sm text-white/90">
-                        <CheckCircle2 className="w-4 h-4 text-white/70" />
-                        <span>{metric}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div>
+            <h3 className="font-bold mb-3" style={{ color: colors.accentOrange }}>Conversion</h3>
+            <ul className="space-y-2 text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
+              <li>• 5% free-to-premium conversion</li>
+              <li>• $4.99/mo average revenue</li>
+              <li>• &lt;5% monthly churn</li>
+            </ul>
           </div>
-        </motion.section>
-
-      </div>
+        </div>
+      </section>
     </div>
-  );
+  )
 }
