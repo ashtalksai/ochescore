@@ -241,9 +241,15 @@ export function Dartboard({
 
   return (
     <div 
-      className="relative w-full aspect-square"
+      className="relative w-full aspect-square p-4 bg-[#050505] rounded-2xl cursor-pointer"
       onClick={handleMissClick}
     >
+      {/* Miss zone label - corners */}
+      <div className="absolute top-2 left-2 text-[10px] text-gray-600 uppercase tracking-wider">tap here = miss</div>
+      <div className="absolute top-2 right-2 text-[10px] text-gray-600 uppercase tracking-wider">tap here = miss</div>
+      <div className="absolute bottom-2 left-2 text-[10px] text-gray-600 uppercase tracking-wider">tap here = miss</div>
+      <div className="absolute bottom-2 right-2 text-[10px] text-gray-600 uppercase tracking-wider">tap here = miss</div>
+      
       <svg
         viewBox="0 0 400 400"
         className={`w-full h-full ${disabled ? "opacity-50" : ""}`}
@@ -269,13 +275,13 @@ export function Dartboard({
           r="198" 
           fill="#0a0a0a" 
           stroke="#333" 
-          strokeWidth="1"
-          strokeDasharray="4 4"
+          strokeWidth="2"
+          strokeDasharray="8 4"
           className="cursor-pointer"
         />
         <text
           x="200"
-          y="15"
+          y="12"
           textAnchor="middle"
           className="fill-gray-600 text-[10px] uppercase tracking-widest pointer-events-none"
         >
