@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +73,24 @@ export default function AppPage() {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState<Player | null>(null);
+  const [savedPlayerNames, setSavedPlayerNames] = useState<string[]>([]);
+
+  // Load saved player names from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('ochescore-players');
+    if (saved) {
+      setSavedPlayerNames(JSON.parse(saved));
+    }
+  }, []);
+
+  // Save player name to localStorage when game starts
+  const savePlayerName = (name: string) => {
+    if (name && name !== 'Player 1' && !savedPlayerNames.includes(name)) {
+      const updated = [...savedPlayerNames, name].slice(-10); // Keep last 10
+      setSavedPlayerNames(updated);
+      localStorage.setItem('ochescore-players', JSON.stringify(updated));
+    }
+  };
 
   // Calculate stats for a player
   const getPlayerStats = (player: Player) => {
@@ -181,6 +199,9 @@ export default function AppPage() {
   };
 
   const startGame = () => {
+    // Save player names to localStorage
+    players.forEach(p => savePlayerName(p.name));
+    
     const initializedPlayers = players.map(p => ({
       ...createPlayer(p.name, x01Variant),
       score: gameMode === "x01" ? x01Variant : 0,
@@ -189,6 +210,13 @@ export default function AppPage() {
     setCurrentPlayerIndex(0);
     setGameStarted(true);
     setWinner(null);
+  };
+
+  // Quick select a saved player
+  const selectSavedPlayer = (index: number, name: string) => {
+    const updated = [...players];
+    updated[index].name = name;
+    setPlayers(updated);
   };
 
   const updatePlayerStats = (player: Player, dartScore: DartScore, isHit: boolean): Player => {
@@ -590,6 +618,25 @@ export default function AppPage() {
           {/* Players */}
           <div className="mb-8">
             <h3 className="text-20 font-bold mb-4">Players ({players.length}/4)</h3>
+            
+            {/* Saved player quick picks */}
+            {savedPlayerNames.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-400 mb-2">Quick pick:</p>
+                <div className="flex flex-wrap gap-2">
+                  {savedPlayerNames.map((name, i) => (
+                    <button
+                      key={i}
+                      onClick={() => selectSavedPlayer(players.length - 1, name)}
+                      className="px-3 py-1 text-sm bg-[#7C3AED]/20 hover:bg-[#7C3AED]/40 rounded-full text-[#7C3AED] transition-colors"
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-3">
               {players.map((player, index) => (
                 <div key={index} className="flex gap-2">
@@ -890,128 +937,51 @@ export default function AppPage() {
     );
   }
 
-  // Active game view
+  // Active game view - DARTBOARD FIRST layout
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Score Header */}
-        <Card className="bg-surface border-white/10 mb-4">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <Button variant="ghost" size="sm" onClick={resetGame}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Menu
-              </Button>
-              <h2 className="text-18 font-bold">
-                {gameMode === "x01" 
-                  ? `X01 - ${x01Variant} (${outType} out)` 
-                  : `Round-the-Clock → ${clockEndType === "bullseye" ? "Bull" : clockEndType}`}
-              </h2>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between p-2 border-b border-white/10">
+        <Button variant="ghost" size="sm" onClick={resetGame}>
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div className="text-center">
+          <div className="font-mono text-2xl font-bold text-[#7C3AED]">
+            {gameMode === "x01" ? currentPlayer.score : (currentPlayer.currentNumber > 20 ? "🎯" : currentPlayer.currentNumber)}
+          </div>
+          <div className="text-xs text-gray-400">{currentPlayer.name}</div>
+        </div>
+        <div className="flex gap-1">
+          {currentPlayer.currentTurn.map((dart, i) => (
+            <div 
+              key={i} 
+              className={`w-8 h-8 rounded text-sm flex items-center justify-center font-mono font-bold ${
+                dart.isHit 
+                  ? 'bg-[#10B981]/20 text-[#10B981]' 
+                  : 'bg-[#F97316]/20 text-[#F97316]'
+              }`}
+            >
+              {dart.value}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {players.map((player, index) => {
-                const stats = getPlayerStats(player);
-                const isActive = index === currentPlayerIndex;
-                return (
-                  <div
-                    key={index}
-                    className={`p-3 rounded-lg transition-all ${
-                      isActive
-                        ? "bg-[#7C3AED] text-white"
-                        : "bg-background"
-                    }`}
-                  >
-                    <div className="text-12 opacity-80">{player.name}</div>
-                    {gameMode === "x01" ? (
-                      <div className="font-mono text-28 font-bold">{player.score}</div>
-                    ) : (
-                      <div className="font-mono text-28 font-bold">
-                        {player.currentNumber > 20 ? "🎯" : player.currentNumber}
-                      </div>
-                    )}
-                    <div className="text-11 opacity-70">
-                      {stats.hitRate}% hit • {stats.threeDartAvg} avg
-                    </div>
-                  </div>
-                );
-              })}
+          ))}
+          {Array.from({ length: 3 - currentPlayer.currentTurn.length }).map((_, i) => (
+            <div key={i} className="w-8 h-8 rounded border border-dashed border-gray-600 flex items-center justify-center text-gray-600 text-xs">
+              —
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+      </div>
 
-        {/* Current Turn & Live Stats */}
-        <Card className="bg-surface border-white/10 mb-4">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              {/* Current Turn */}
-              <div className="text-center md:text-left">
-                <h3 className="text-20 font-bold mb-2">
-                  {gameMode === "round-the-clock" ? (
-                    <>Target: <span className="text-[#F97316]">
-                      {currentPlayer.currentNumber > 20 ? "🎯 Bullseye" : currentPlayer.currentNumber}
-                    </span></>
-                  ) : (
-                    <>Current: <span className="text-[#7C3AED]">{currentPlayer.name}</span></>
-                  )}
-                </h3>
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                  {currentPlayer.currentTurn.map((dart, i) => (
-                    <div 
-                      key={i} 
-                      className={`w-10 h-10 rounded border-2 flex items-center justify-center font-mono text-18 font-bold ${
-                        dart.isHit 
-                          ? 'bg-[#10B981]/20 border-[#10B981] text-[#10B981]' 
-                          : 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
-                      }`}
-                    >
-                      {dart.value}
-                    </div>
-                  ))}
-                  {Array.from({ length: 3 - currentPlayer.currentTurn.length }).map((_, i) => (
-                    <div key={i} className="w-10 h-10 rounded border-2 border-dashed border-text-secondary/30 flex items-center justify-center">
-                      <span className="text-text-secondary/30 text-14">—</span>
-                    </div>
-                  ))}
-                </div>
-                {currentPlayer.currentTurn.length > 0 && (
-                  <div className="text-16">
-                    Turn Total: <span className="font-mono font-bold">{turnTotal}</span>
-                  </div>
-                )}
-              </div>
+      {/* Checkout Hint (if applicable) */}
+      {checkoutHint && (
+        <div className="bg-[#7C3AED]/20 px-3 py-1 text-center text-sm">
+          <span className="text-[#F97316]">💡</span> {checkoutHint}
+        </div>
+      )}
 
-              {/* Live Stats */}
-              <div className="flex gap-4 justify-center">
-                <div className="text-center">
-                  <div className="text-11 text-text-secondary">Hit %</div>
-                  <div className="font-mono text-20 font-bold text-[#10B981]">{currentStats.hitRate}%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-11 text-text-secondary">3-Dart Avg</div>
-                  <div className="font-mono text-20 font-bold text-[#7C3AED]">{currentStats.threeDartAvg}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-11 text-text-secondary">Rounds</div>
-                  <div className="font-mono text-20 font-bold text-[#F97316]">{currentStats.totalRounds}</div>
-                </div>
-              </div>
-            </div>
-
-            {checkoutHint && (
-              <motion.div
-                className="bg-[#7C3AED]/20 border border-[#7C3AED] rounded-lg p-3 text-center mt-4"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div className="text-12 text-[#F97316] mb-1">💡 Checkout Hint</div>
-                <div className="font-mono text-16 font-bold">{checkoutHint}</div>
-              </motion.div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Dartboard */}
-        <div className="mb-4">
+      {/* DARTBOARD - Takes up most of the screen */}
+      <div className="flex-1 flex items-center justify-center p-2">
+        <div className="w-full max-w-[95vw] md:max-w-xl">
           <Dartboard 
             onScore={handleScore} 
             disabled={!!winner}
@@ -1019,9 +989,11 @@ export default function AppPage() {
             highlightBull={gameMode === "round-the-clock" && currentPlayer.currentNumber > 20}
           />
         </div>
+      </div>
 
-        {/* Controls */}
-        <div className="flex gap-3">
+      {/* Bottom Controls */}
+      <div className="p-3 border-t border-white/10">
+        <div className="flex gap-2 max-w-xl mx-auto">
           <Button
             variant="outline"
             size="lg"
@@ -1029,7 +1001,7 @@ export default function AppPage() {
             disabled={currentPlayer.currentTurn.length === 0}
             className="flex-1"
           >
-            <Undo className="w-4 h-4 mr-2" />
+            <Undo className="w-4 h-4 mr-1" />
             Undo
           </Button>
           <Button
@@ -1041,6 +1013,27 @@ export default function AppPage() {
             Miss (0)
           </Button>
         </div>
+        
+        {/* Multi-player score bar */}
+        {players.length > 1 && (
+          <div className="flex gap-2 mt-2 max-w-xl mx-auto overflow-x-auto">
+            {players.map((player, index) => (
+              <div
+                key={index}
+                className={`flex-1 min-w-[70px] p-2 rounded text-center text-sm ${
+                  index === currentPlayerIndex
+                    ? "bg-[#7C3AED] text-white"
+                    : "bg-[#1a1a1a]"
+                }`}
+              >
+                <div className="truncate text-xs">{player.name}</div>
+                <div className="font-mono font-bold">
+                  {gameMode === "x01" ? player.score : (player.currentNumber > 20 ? "🎯" : player.currentNumber)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

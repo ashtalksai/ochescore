@@ -222,7 +222,7 @@ export function Dartboard({
   const outerBullHighlightFilter = highlightBull ? "drop-shadow(0 0 12px rgba(249, 115, 22, 1))" : undefined;
 
   return (
-    <div className="relative w-full max-w-[90vw] md:max-w-xl mx-auto aspect-square">
+    <div className="relative w-full aspect-square">
       <svg
         viewBox="0 0 400 400"
         className={`w-full h-full ${disabled ? "opacity-50" : ""}`}
