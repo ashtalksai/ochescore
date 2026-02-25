@@ -543,10 +543,14 @@ export default function AppPage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
+          <div className="mb-8 flex items-center justify-between">
             <Link href="/" className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
               <ArrowLeft className="w-4 h-4" />
               Back to Home
+            </Link>
+            <Link href="/leaderboard" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F97316]/10 text-[#F97316] hover:bg-[#F97316]/20 transition-colors">
+              <Trophy className="w-4 h-4" />
+              Leaderboard
             </Link>
           </div>
 
