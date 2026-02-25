@@ -85,13 +85,16 @@ export function Dartboard({
     // Check if this number should be highlighted
     const isHighlighted = highlightNumber === number;
 
-    // Colors alternate between black/white for singles, red/green for doubles/triples
-    const isRed = [1, 4, 6, 10, 13, 15, 17, 19].includes(number);
+    // Standard dartboard colors: black/cream for singles, red/green for doubles/triples
+    // Red segments: 1, 4, 6, 15, 17, 19 (and their doubles/triples)
+    // Green segments: 2, 3, 7, 8, 10, 11, 12, 13, 14, 16, 18, 20
+    const isRedSegment = index % 2 === 0;
     
-    // Highlighted version has glowing effect
-    let singleColor = isRed ? "#DC2626" : index % 2 === 0 ? "#000" : "#F5F5F5";
-    let doubleColor = isRed ? "#DC2626" : "#10B981";
-    let tripleColor = doubleColor;
+    // Singles: black and cream/tan (not white - more like a real board)
+    const singleColor = index % 2 === 0 ? "#1a1a1a" : "#F5DEB3";
+    // Doubles/triples: red and green
+    const doubleColor = isRedSegment ? "#C41E3A" : "#228B22";
+    const tripleColor = doubleColor;
 
     // SVG path coordinates for each ring
     const outerRadius = 180;
@@ -219,7 +222,7 @@ export function Dartboard({
   const outerBullHighlightFilter = highlightBull ? "drop-shadow(0 0 12px rgba(249, 115, 22, 1))" : undefined;
 
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-square">
+    <div className="relative w-full max-w-[90vw] md:max-w-xl mx-auto aspect-square">
       <svg
         viewBox="0 0 400 400"
         className={`w-full h-full ${disabled ? "opacity-50" : ""}`}
