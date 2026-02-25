@@ -309,9 +309,14 @@ export default function AppPage() {
     const newTurn = [...updatedPlayer.currentTurn, dartThrow];
     updatedPlayer.currentTurn = newTurn;
 
-    // Calculate score after this dart
+    // Calculate starting score for this turn (before any darts were thrown)
+    // We need to add back the value of previous darts in this turn since score was updated mid-turn
+    const previousDartsValue = currentPlayer.currentTurn.reduce((sum, dart) => sum + dart.value, 0);
+    const startOfTurnScore = currentPlayer.score + previousDartsValue;
+    
+    // Calculate score after all darts in this turn
     const turnTotal = newTurn.reduce((sum, dart) => sum + dart.value, 0);
-    const newScore = updatedPlayer.score - turnTotal;
+    const newScore = startOfTurnScore - turnTotal;
 
     // Check for valid finish (can happen on any dart, not just 3rd)
     let isValidFinish = false;
@@ -353,9 +358,9 @@ export default function AppPage() {
       });
     } else if (isBust) {
       // Bust - score resets to start of turn, move to next player
+      updatedPlayer.score = startOfTurnScore; // Reset to start of turn
       updatedPlayer.history = [...updatedPlayer.history, newTurn];
       updatedPlayer.currentTurn = [];
-      // Score stays the same (doesn't apply this turn's throws)
       
       const updatedPlayers = [...players];
       updatedPlayers[currentPlayerIndex] = updatedPlayer;
