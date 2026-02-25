@@ -221,24 +221,67 @@ export function Dartboard({
   const bullHighlightFilter = highlightBull ? "drop-shadow(0 0 15px rgba(124, 58, 237, 1))" : undefined;
   const outerBullHighlightFilter = highlightBull ? "drop-shadow(0 0 12px rgba(249, 115, 22, 1))" : undefined;
 
+  const handleMissClick = (e: React.MouseEvent) => {
+    if (disabled) return;
+    
+    // Flying miss animation
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setFlyingScore({ x, y, value: 0, isHit: false });
+    
+    // Haptic feedback
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(30);
+    }
+    
+    setTimeout(() => setFlyingScore(null), 400);
+    handleMiss();
+  };
+
   return (
-    <div className="relative w-full aspect-square">
+    <div 
+      className="relative w-full aspect-square"
+      onClick={handleMissClick}
+    >
       <svg
         viewBox="0 0 400 400"
         className={`w-full h-full ${disabled ? "opacity-50" : ""}`}
         onClick={(e) => {
-          // Miss if clicking outside the dartboard
+          // Check if click is inside the scoring area - if so, stop propagation
           const svg = e.currentTarget;
           const rect = svg.getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 400;
           const y = ((e.clientY - rect.top) / rect.height) * 400;
           const distance = Math.sqrt(Math.pow(x - 200, 2) + Math.pow(y - 200, 2));
           
-          if (distance > 180) {
-            handleMiss();
+          if (distance <= 180) {
+            // Inside dartboard - stop event from bubbling to miss handler
+            e.stopPropagation();
           }
+          // Outside clicks will bubble up to parent div's handleMissClick
         }}
       >
+        {/* Miss zone - outer ring */}
+        <circle 
+          cx="200" 
+          cy="200" 
+          r="198" 
+          fill="#0a0a0a" 
+          stroke="#333" 
+          strokeWidth="1"
+          strokeDasharray="4 4"
+          className="cursor-pointer"
+        />
+        <text
+          x="200"
+          y="15"
+          textAnchor="middle"
+          className="fill-gray-600 text-[10px] uppercase tracking-widest pointer-events-none"
+        >
+          miss zone
+        </text>
+        
         {/* Outer border */}
         <circle cx="200" cy="200" r="185" fill="#1A1A1A" stroke="#333" strokeWidth="2" />
 
