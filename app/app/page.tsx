@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,17 +9,37 @@ import { Toggle } from "@/components/ui/toggle";
 import { Dartboard } from "@/components/dartboard";
 import Link from "next/link";
 import confetti from "canvas-confetti";
-import { ArrowLeft, Undo, Target, Trophy } from "lucide-react";
+import { ArrowLeft, Undo, Target, Trophy, TrendingUp, Percent, BarChart3 } from "lucide-react";
 
 type GameMode = "x01" | "round-the-clock" | null;
 type X01Variant = 301 | 501 | 101;
 type OutType = "normal" | "double";
+type ClockEndType = "bullseye" | "20" | "10";
+
+interface DartThrow {
+  number: number;
+  type: string;
+  value: number;
+  isHit: boolean; // Did it hit the intended target (for round-the-clock) or any scoring area
+  targetNumber?: number; // The target we were aiming for (round-the-clock)
+}
 
 interface Player {
   name: string;
   score: number;
-  currentTurn: number[];
-  history: number[][];
+  currentTurn: DartThrow[];
+  history: DartThrow[][]; // Each round's throws
+  // Round-the-clock specific
+  currentNumber: number;
+  // Stats
+  totalThrows: number;
+  totalHits: number; // Throws that hit a scoring area (not miss)
+  totalMisses: number;
+  singlesHit: number;
+  doublesHit: number;
+  triplesHit: number;
+  bullseyesHit: number;
+  outerBullsHit: number;
 }
 
 interface DartScore {
@@ -28,16 +48,75 @@ interface DartScore {
   value: number;
 }
 
+const createPlayer = (name: string, startScore: number): Player => ({
+  name,
+  score: startScore,
+  currentTurn: [],
+  history: [],
+  currentNumber: 1,
+  totalThrows: 0,
+  totalHits: 0,
+  totalMisses: 0,
+  singlesHit: 0,
+  doublesHit: 0,
+  triplesHit: 0,
+  bullseyesHit: 0,
+  outerBullsHit: 0,
+});
+
 export default function AppPage() {
   const [gameMode, setGameMode] = useState<GameMode>(null);
   const [x01Variant, setX01Variant] = useState<X01Variant>(501);
   const [outType, setOutType] = useState<OutType>("normal");
-  const [players, setPlayers] = useState<Player[]>([
-    { name: "Player 1", score: 501, currentTurn: [], history: [] },
-  ]);
+  const [clockEndType, setClockEndType] = useState<ClockEndType>("bullseye");
+  const [players, setPlayers] = useState<Player[]>([createPlayer("Player 1", 501)]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState<Player | null>(null);
+
+  // Calculate stats for a player
+  const getPlayerStats = (player: Player) => {
+    const hitRate = player.totalThrows > 0 
+      ? ((player.totalHits / player.totalThrows) * 100).toFixed(1) 
+      : "0.0";
+    
+    const totalScoringThrows = player.singlesHit + player.doublesHit + player.triplesHit + player.bullseyesHit + player.outerBullsHit;
+    
+    const singlesRate = totalScoringThrows > 0 
+      ? ((player.singlesHit / totalScoringThrows) * 100).toFixed(1) 
+      : "0.0";
+    
+    const doublesRate = totalScoringThrows > 0 
+      ? ((player.doublesHit / totalScoringThrows) * 100).toFixed(1) 
+      : "0.0";
+    
+    const triplesRate = totalScoringThrows > 0 
+      ? ((player.triplesHit / totalScoringThrows) * 100).toFixed(1) 
+      : "0.0";
+
+    // Calculate per-round average
+    const totalRounds = player.history.length;
+    const totalPoints = player.history.reduce((sum, round) => 
+      sum + round.reduce((roundSum, dart) => roundSum + dart.value, 0), 0
+    );
+    const roundAverage = totalRounds > 0 ? (totalPoints / totalRounds).toFixed(1) : "0.0";
+    
+    // 3-dart average
+    const threeDartAvg = player.totalThrows > 0 
+      ? ((totalPoints / player.totalThrows) * 3).toFixed(1) 
+      : "0.0";
+
+    return {
+      hitRate,
+      singlesRate,
+      doublesRate,
+      triplesRate,
+      roundAverage,
+      threeDartAvg,
+      totalRounds,
+      totalPoints,
+    };
+  };
 
   // Checkout hints for scores ≤170
   const getCheckoutHint = (remaining: number): string => {
@@ -56,7 +135,6 @@ export default function AppPage() {
       152: "T20 → T20 → D16",
       151: "T20 → T17 → D20",
       150: "T20 → T18 → D18",
-      // Add more checkouts as needed
       120: "T20 → 20 → D20",
       110: "T20 → T10 → D20",
       100: "T20 → D20",
@@ -72,11 +150,20 @@ export default function AppPage() {
     return checkouts[remaining] || (remaining <= 40 && remaining % 2 === 0 ? `D${remaining / 2}` : "");
   };
 
+  // Get the end target for round-the-clock
+  const getClockEndTarget = (): number | "bull" => {
+    switch (clockEndType) {
+      case "bullseye": return "bull";
+      case "20": return 20;
+      case "10": return 10;
+    }
+  };
+
   const addPlayer = () => {
     if (players.length < 4) {
       setPlayers([
         ...players,
-        { name: `Player ${players.length + 1}`, score: x01Variant, currentTurn: [], history: [] },
+        createPlayer(`Player ${players.length + 1}`, x01Variant),
       ]);
     }
   };
@@ -95,10 +182,8 @@ export default function AppPage() {
 
   const startGame = () => {
     const initializedPlayers = players.map(p => ({
-      ...p,
-      score: x01Variant,
-      currentTurn: [],
-      history: [],
+      ...createPlayer(p.name, x01Variant),
+      score: gameMode === "x01" ? x01Variant : 0,
     }));
     setPlayers(initializedPlayers);
     setCurrentPlayerIndex(0);
@@ -106,22 +191,59 @@ export default function AppPage() {
     setWinner(null);
   };
 
-  const handleScore = (dartScore: DartScore) => {
+  const updatePlayerStats = (player: Player, dartScore: DartScore, isHit: boolean): Player => {
+    const updated = { ...player };
+    updated.totalThrows++;
+    
+    if (dartScore.type === "miss") {
+      updated.totalMisses++;
+    } else {
+      updated.totalHits++;
+      
+      switch (dartScore.type) {
+        case "single":
+          updated.singlesHit++;
+          break;
+        case "double":
+          updated.doublesHit++;
+          break;
+        case "triple":
+          updated.triplesHit++;
+          break;
+        case "bull":
+          updated.bullseyesHit++;
+          break;
+        case "outer-bull":
+          updated.outerBullsHit++;
+          break;
+      }
+    }
+    
+    return updated;
+  };
+
+  const handleX01Score = (dartScore: DartScore) => {
     if (winner) return;
 
     const currentPlayer = players[currentPlayerIndex];
-    const newTurn = [...currentPlayer.currentTurn, dartScore.value];
+    const dartThrow: DartThrow = {
+      ...dartScore,
+      isHit: dartScore.type !== "miss",
+    };
+    
+    let updatedPlayer = updatePlayerStats({ ...currentPlayer }, dartScore, dartScore.type !== "miss");
+    const newTurn = [...updatedPlayer.currentTurn, dartThrow];
+    updatedPlayer.currentTurn = newTurn;
 
     // Check if turn is complete (3 darts)
     if (newTurn.length === 3) {
-      const turnTotal = newTurn.reduce((sum, val) => sum + val, 0);
-      const newScore = currentPlayer.score - turnTotal;
+      const turnTotal = newTurn.reduce((sum, dart) => sum + dart.value, 0);
+      const newScore = updatedPlayer.score - turnTotal;
 
       // Check for valid finish
       let isValidFinish = false;
       if (newScore === 0) {
         if (outType === "double") {
-          // Must finish with a double
           isValidFinish = dartScore.type === "double" || dartScore.type === "bull";
         } else {
           isValidFinish = true;
@@ -129,18 +251,15 @@ export default function AppPage() {
       }
 
       if (isValidFinish) {
-        // Winner!
-        const updatedPlayers = [...players];
-        updatedPlayers[currentPlayerIndex] = {
-          ...currentPlayer,
-          score: 0,
-          currentTurn: [],
-          history: [...currentPlayer.history, newTurn],
-        };
-        setPlayers(updatedPlayers);
-        setWinner(updatedPlayers[currentPlayerIndex]);
+        updatedPlayer.score = 0;
+        updatedPlayer.history = [...updatedPlayer.history, newTurn];
+        updatedPlayer.currentTurn = [];
         
-        // Confetti!
+        const updatedPlayers = [...players];
+        updatedPlayers[currentPlayerIndex] = updatedPlayer;
+        setPlayers(updatedPlayers);
+        setWinner(updatedPlayer);
+        
         confetti({
           particleCount: 100,
           spread: 70,
@@ -149,49 +268,165 @@ export default function AppPage() {
         });
       } else if (newScore < 0 || (outType === "double" && newScore === 0 && dartScore.type !== "double" && dartScore.type !== "bull")) {
         // Bust - reset to score at start of turn
-        const updatedPlayers = [...players];
-        updatedPlayers[currentPlayerIndex] = {
-          ...currentPlayer,
-          currentTurn: [],
-          history: [...currentPlayer.history, newTurn],
-        };
-        setPlayers(updatedPlayers);
+        updatedPlayer.history = [...updatedPlayer.history, newTurn];
+        updatedPlayer.currentTurn = [];
         
-        // Move to next player
+        const updatedPlayers = [...players];
+        updatedPlayers[currentPlayerIndex] = updatedPlayer;
+        setPlayers(updatedPlayers);
         setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
       } else {
-        // Valid turn
-        const updatedPlayers = [...players];
-        updatedPlayers[currentPlayerIndex] = {
-          ...currentPlayer,
-          score: newScore,
-          currentTurn: [],
-          history: [...currentPlayer.history, newTurn],
-        };
-        setPlayers(updatedPlayers);
+        updatedPlayer.score = newScore;
+        updatedPlayer.history = [...updatedPlayer.history, newTurn];
+        updatedPlayer.currentTurn = [];
         
-        // Move to next player
+        const updatedPlayers = [...players];
+        updatedPlayers[currentPlayerIndex] = updatedPlayer;
+        setPlayers(updatedPlayers);
         setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
       }
     } else {
-      // Add dart to current turn
       const updatedPlayers = [...players];
-      updatedPlayers[currentPlayerIndex] = {
-        ...currentPlayer,
-        currentTurn: newTurn,
-      };
+      updatedPlayers[currentPlayerIndex] = updatedPlayer;
       setPlayers(updatedPlayers);
+    }
+  };
+
+  const handleClockScore = (dartScore: DartScore) => {
+    if (winner) return;
+
+    const currentPlayer = players[currentPlayerIndex];
+    const endTarget = getClockEndTarget();
+    const targetNumber = currentPlayer.currentNumber;
+    
+    // Determine if this hit advances us
+    let advanceBy = 0;
+    let isHit = false;
+    
+    // Check if we're at the bullseye stage
+    const endNum = endTarget === "bull" ? 21 : endTarget;
+    const atBullseyeStage = endTarget === "bull" && targetNumber > 20;
+    
+    if (atBullseyeStage) {
+      // At bullseye stage - need to hit bull or outer-bull
+      if (dartScore.type === "bull") {
+        isHit = true;
+        advanceBy = 1; // Win!
+      } else if (dartScore.type === "outer-bull") {
+        // Double outer bullseye counts as bullseye
+        isHit = true;
+        advanceBy = 1; // Win!
+      }
+    } else {
+      // Normal number targeting
+      if (dartScore.number === targetNumber) {
+        isHit = true;
+        if (dartScore.type === "triple") {
+          advanceBy = 3;
+        } else if (dartScore.type === "double") {
+          advanceBy = 2;
+        } else {
+          advanceBy = 1;
+        }
+      }
+    }
+    
+    const dartThrow: DartThrow = {
+      ...dartScore,
+      isHit,
+      targetNumber,
+    };
+    
+    let updatedPlayer = updatePlayerStats({ ...currentPlayer }, dartScore, isHit);
+    const newTurn = [...updatedPlayer.currentTurn, dartThrow];
+    updatedPlayer.currentTurn = newTurn;
+    
+    // Calculate new current number
+    let newCurrentNumber = updatedPlayer.currentNumber + advanceBy;
+    
+    // Cap at the end target
+    if (endTarget === "bull") {
+      if (newCurrentNumber > 21) newCurrentNumber = 21; // 21 = bullseye stage
+    } else {
+      if (newCurrentNumber > endTarget) newCurrentNumber = endTarget + 1; // Win condition
+    }
+    
+    updatedPlayer.currentNumber = newCurrentNumber;
+    updatedPlayer.score = newCurrentNumber - 1; // Score = progress
+    
+    // Check for win
+    const hasWon = (endTarget === "bull" && newCurrentNumber > 21 && isHit && (dartScore.type === "bull" || dartScore.type === "outer-bull")) ||
+                   (endTarget !== "bull" && newCurrentNumber > endTarget);
+    
+    // Check if turn is complete (3 darts)
+    if (newTurn.length === 3 || hasWon) {
+      updatedPlayer.history = [...updatedPlayer.history, newTurn];
+      updatedPlayer.currentTurn = [];
+      
+      const updatedPlayers = [...players];
+      updatedPlayers[currentPlayerIndex] = updatedPlayer;
+      setPlayers(updatedPlayers);
+      
+      if (hasWon) {
+        setWinner(updatedPlayer);
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#7C3AED', '#F97316', '#10B981'],
+        });
+      } else {
+        setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+      }
+    } else {
+      const updatedPlayers = [...players];
+      updatedPlayers[currentPlayerIndex] = updatedPlayer;
+      setPlayers(updatedPlayers);
+    }
+  };
+
+  const handleScore = (dartScore: DartScore) => {
+    if (gameMode === "x01") {
+      handleX01Score(dartScore);
+    } else if (gameMode === "round-the-clock") {
+      handleClockScore(dartScore);
     }
   };
 
   const undoLast = () => {
     const currentPlayer = players[currentPlayerIndex];
     if (currentPlayer.currentTurn.length > 0) {
+      const lastThrow = currentPlayer.currentTurn[currentPlayer.currentTurn.length - 1];
+      const updatedPlayer = { ...currentPlayer };
+      
+      // Reverse stats
+      updatedPlayer.totalThrows--;
+      if (lastThrow.type === "miss") {
+        updatedPlayer.totalMisses--;
+      } else {
+        updatedPlayer.totalHits--;
+        switch (lastThrow.type) {
+          case "single": updatedPlayer.singlesHit--; break;
+          case "double": updatedPlayer.doublesHit--; break;
+          case "triple": updatedPlayer.triplesHit--; break;
+          case "bull": updatedPlayer.bullseyesHit--; break;
+          case "outer-bull": updatedPlayer.outerBullsHit--; break;
+        }
+      }
+      
+      // For round-the-clock, reverse progress
+      if (gameMode === "round-the-clock" && lastThrow.isHit) {
+        let reverseBy = 1;
+        if (lastThrow.type === "double") reverseBy = 2;
+        if (lastThrow.type === "triple") reverseBy = 3;
+        updatedPlayer.currentNumber = Math.max(1, updatedPlayer.currentNumber - reverseBy);
+        updatedPlayer.score = updatedPlayer.currentNumber - 1;
+      }
+      
+      updatedPlayer.currentTurn = currentPlayer.currentTurn.slice(0, -1);
+      
       const updatedPlayers = [...players];
-      updatedPlayers[currentPlayerIndex] = {
-        ...currentPlayer,
-        currentTurn: currentPlayer.currentTurn.slice(0, -1),
-      };
+      updatedPlayers[currentPlayerIndex] = updatedPlayer;
       setPlayers(updatedPlayers);
     }
   };
@@ -204,7 +439,7 @@ export default function AppPage() {
     setGameMode(null);
     setGameStarted(false);
     setWinner(null);
-    setPlayers([{ name: "Player 1", score: 501, currentTurn: [], history: [] }]);
+    setPlayers([createPlayer("Player 1", 501)]);
     setCurrentPlayerIndex(0);
   };
 
@@ -269,7 +504,8 @@ export default function AppPage() {
               transition={{ delay: 0.3 }}
             >
               <Card 
-                className="bg-surface border-white/10 hover:border-[#F97316] hover:shadow-lg hover:shadow-[#F97316]/20 cursor-pointer transition-all h-full opacity-50"
+                className="bg-surface border-white/10 hover:border-[#F97316] hover:shadow-lg hover:shadow-[#F97316]/20 cursor-pointer transition-all h-full"
+                onClick={() => setGameMode("round-the-clock")}
               >
                 <CardHeader>
                   <Trophy className="w-16 h-16 text-[#F97316] mb-4" />
@@ -277,12 +513,12 @@ export default function AppPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-text-secondary text-16 mb-4">
-                    Hit 1 through 20 in order. Race the clock. Perfect for practice.
+                    Hit 1 through 20 in order. Doubles skip 2, triples skip 3!
                   </p>
                   <ul className="space-y-2 text-14 text-text-secondary">
-                    <li>• Multiple variants</li>
-                    <li>• Timed challenges</li>
-                    <li>• Coming soon!</li>
+                    <li>• Multiple end variations</li>
+                    <li>• Great for practice</li>
+                    <li>• 1-4 players</li>
                   </ul>
                 </CardContent>
               </Card>
@@ -390,119 +626,396 @@ export default function AppPage() {
     );
   }
 
+  // Game Setup (Round-the-Clock)
+  if (gameMode === "round-the-clock" && !gameStarted) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-8">
+            <Button variant="ghost" onClick={() => setGameMode(null)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+          </div>
+
+          <motion.h1 
+            className="font-display text-48 font-bold mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            Setup Round-the-Clock
+          </motion.h1>
+
+          {/* End Type */}
+          <div className="mb-8">
+            <h3 className="text-20 font-bold mb-4">End Target</h3>
+            <p className="text-text-secondary mb-4">Where does the game end?</p>
+            <div className="flex flex-wrap gap-3">
+              <Toggle
+                pressed={clockEndType === "bullseye"}
+                onPressedChange={() => setClockEndType("bullseye")}
+                className="data-[state=on]:bg-[#F97316] data-[state=on]:text-white"
+              >
+                🎯 Bullseye (1-20, then bull)
+              </Toggle>
+              <Toggle
+                pressed={clockEndType === "20"}
+                onPressedChange={() => setClockEndType("20")}
+                className="data-[state=on]:bg-[#F97316] data-[state=on]:text-white"
+              >
+                End at 20
+              </Toggle>
+              <Toggle
+                pressed={clockEndType === "10"}
+                onPressedChange={() => setClockEndType("10")}
+                className="data-[state=on]:bg-[#F97316] data-[state=on]:text-white"
+              >
+                End at 10 (quick game)
+              </Toggle>
+            </div>
+            <p className="text-text-secondary text-14 mt-3">
+              💡 Double hits skip 2 numbers, triple hits skip 3!
+              {clockEndType === "bullseye" && " Outer bullseye counts as bullseye to win."}
+            </p>
+          </div>
+
+          {/* Players */}
+          <div className="mb-8">
+            <h3 className="text-20 font-bold mb-4">Players ({players.length}/4)</h3>
+            <div className="space-y-3">
+              {players.map((player, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={player.name}
+                    onChange={(e) => updatePlayerName(index, e.target.value)}
+                    placeholder={`Player ${index + 1}`}
+                    className="flex-1"
+                  />
+                  {players.length > 1 && (
+                    <Button variant="outline" onClick={() => removePlayer(index)}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {players.length < 4 && (
+                <Button variant="outline" onClick={addPlayer} className="w-full">
+                  + Add Player
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <Button
+            size="lg"
+            className="w-full bg-[#F97316] hover:bg-[#EA580C] text-white text-20 py-8 animate-pulse"
+            onClick={startGame}
+          >
+            Start Game
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Active Game
   const currentPlayer = players[currentPlayerIndex];
-  const turnTotal = currentPlayer.currentTurn.reduce((sum, val) => sum + val, 0);
-  const checkoutHint = getCheckoutHint(currentPlayer.score);
+  const turnTotal = currentPlayer.currentTurn.reduce((sum, dart) => sum + dart.value, 0);
+  const checkoutHint = gameMode === "x01" ? getCheckoutHint(currentPlayer.score) : "";
+  const currentStats = getPlayerStats(currentPlayer);
 
+  // Winner screen with detailed stats
+  if (winner) {
+    const winnerStats = getPlayerStats(winner);
+    
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-6">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            className="text-center mb-8"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            <Trophy className="w-24 h-24 text-[#F97316] mx-auto mb-4" />
+            <h1 className="font-display text-56 font-bold mb-2">
+              {winner.name} <span className="text-[#7C3AED]">Wins!</span>
+            </h1>
+            <p className="text-20 text-text-secondary">
+              {gameMode === "x01" ? `X01 - ${x01Variant}` : `Round-the-Clock (${clockEndType})`}
+            </p>
+          </motion.div>
+
+          {/* Winner Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="bg-surface border-white/10 mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-[#7C3AED]" />
+                  Game Summary - {winner.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-background p-4 rounded-lg text-center">
+                    <div className="text-12 text-text-secondary mb-1">Hit Rate</div>
+                    <div className="font-mono text-28 font-bold text-[#10B981]">{winnerStats.hitRate}%</div>
+                  </div>
+                  <div className="bg-background p-4 rounded-lg text-center">
+                    <div className="text-12 text-text-secondary mb-1">3-Dart Avg</div>
+                    <div className="font-mono text-28 font-bold text-[#7C3AED]">{winnerStats.threeDartAvg}</div>
+                  </div>
+                  <div className="bg-background p-4 rounded-lg text-center">
+                    <div className="text-12 text-text-secondary mb-1">Total Rounds</div>
+                    <div className="font-mono text-28 font-bold text-[#F97316]">{winnerStats.totalRounds}</div>
+                  </div>
+                  <div className="bg-background p-4 rounded-lg text-center">
+                    <div className="text-12 text-text-secondary mb-1">Total Points</div>
+                    <div className="font-mono text-28 font-bold">{winnerStats.totalPoints}</div>
+                  </div>
+                </div>
+
+                {/* Segment Breakdown */}
+                <h4 className="text-16 font-bold mb-3">Segment Accuracy</h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="bg-background p-3 rounded-lg">
+                    <div className="text-12 text-text-secondary">Singles</div>
+                    <div className="font-mono text-20 font-bold">{winner.singlesHit}</div>
+                    <div className="text-12 text-[#10B981]">{winnerStats.singlesRate}%</div>
+                  </div>
+                  <div className="bg-background p-3 rounded-lg">
+                    <div className="text-12 text-text-secondary">Doubles</div>
+                    <div className="font-mono text-20 font-bold text-[#DC2626]">{winner.doublesHit}</div>
+                    <div className="text-12 text-[#10B981]">{winnerStats.doublesRate}%</div>
+                  </div>
+                  <div className="bg-background p-3 rounded-lg">
+                    <div className="text-12 text-text-secondary">Triples</div>
+                    <div className="font-mono text-20 font-bold text-[#7C3AED]">{winner.triplesHit}</div>
+                    <div className="text-12 text-[#10B981]">{winnerStats.triplesRate}%</div>
+                  </div>
+                  <div className="bg-background p-3 rounded-lg">
+                    <div className="text-12 text-text-secondary">Bullseyes</div>
+                    <div className="font-mono text-20 font-bold text-[#7C3AED]">{winner.bullseyesHit}</div>
+                  </div>
+                  <div className="bg-background p-3 rounded-lg">
+                    <div className="text-12 text-text-secondary">Outer Bulls</div>
+                    <div className="font-mono text-20 font-bold text-[#F97316]">{winner.outerBullsHit}</div>
+                  </div>
+                </div>
+
+                {/* Throw Breakdown */}
+                <div className="mt-4 p-4 bg-background rounded-lg">
+                  <div className="flex justify-between text-14">
+                    <span className="text-text-secondary">Total Throws:</span>
+                    <span className="font-mono font-bold">{winner.totalThrows}</span>
+                  </div>
+                  <div className="flex justify-between text-14">
+                    <span className="text-text-secondary">Hits:</span>
+                    <span className="font-mono font-bold text-[#10B981]">{winner.totalHits}</span>
+                  </div>
+                  <div className="flex justify-between text-14">
+                    <span className="text-text-secondary">Misses:</span>
+                    <span className="font-mono font-bold text-[#EF4444]">{winner.totalMisses}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* All Players Stats */}
+          {players.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="bg-surface border-white/10 mb-6">
+                <CardHeader>
+                  <CardTitle>All Players</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {players.map((player, index) => {
+                      const stats = getPlayerStats(player);
+                      const isWinner = player.name === winner.name;
+                      return (
+                        <div 
+                          key={index} 
+                          className={`p-4 rounded-lg ${isWinner ? 'bg-[#7C3AED]/20 border border-[#7C3AED]' : 'bg-background'}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-bold">{player.name} {isWinner && '🏆'}</span>
+                            <span className="font-mono text-20">{stats.hitRate}% hit</span>
+                          </div>
+                          <div className="grid grid-cols-4 gap-2 text-12">
+                            <div>
+                              <span className="text-text-secondary">3DA:</span>{' '}
+                              <span className="font-mono">{stats.threeDartAvg}</span>
+                            </div>
+                            <div>
+                              <span className="text-text-secondary">Rounds:</span>{' '}
+                              <span className="font-mono">{stats.totalRounds}</span>
+                            </div>
+                            <div>
+                              <span className="text-text-secondary">Hits:</span>{' '}
+                              <span className="font-mono text-[#10B981]">{player.totalHits}</span>
+                            </div>
+                            <div>
+                              <span className="text-text-secondary">Miss:</span>{' '}
+                              <span className="font-mono text-[#EF4444]">{player.totalMisses}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          <div className="flex gap-4 justify-center">
+            <Button size="lg" onClick={startGame} className="bg-[#7C3AED] hover:bg-[#6D28D9]">
+              Play Again
+            </Button>
+            <Button size="lg" variant="outline" onClick={resetGame}>
+              Menu
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Active game view
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Winner Screen */}
-        <AnimatePresence>
-          {winner && (
-            <motion.div
-              className="fixed inset-0 bg-background/95 z-50 flex items-center justify-center p-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className="text-center"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Trophy className="w-32 h-32 text-[#F97316] mx-auto mb-6" />
-                <h1 className="font-display text-72 font-bold mb-4">
-                  {winner.name} <span className="text-[#7C3AED]">Wins!</span>
-                </h1>
-                <p className="text-24 text-text-secondary mb-8">
-                  Game complete!
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button size="lg" onClick={startGame}>
-                    Play Again
-                  </Button>
-                  <Button size="lg" variant="outline" onClick={resetGame}>
-                    Menu
-                  </Button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Score Header */}
-        <Card className="bg-surface border-white/10 mb-6">
+        <Card className="bg-surface border-white/10 mb-4">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <Button variant="ghost" size="sm" onClick={resetGame}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Menu
               </Button>
-              <h2 className="text-20 font-bold">X01 - {x01Variant} ({outType} out)</h2>
+              <h2 className="text-18 font-bold">
+                {gameMode === "x01" 
+                  ? `X01 - ${x01Variant} (${outType} out)` 
+                  : `Round-the-Clock → ${clockEndType === "bullseye" ? "Bull" : clockEndType}`}
+              </h2>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {players.map((player, index) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded-lg transition-all ${
-                    index === currentPlayerIndex
-                      ? "bg-[#7C3AED] text-white"
-                      : "bg-background"
-                  }`}
-                >
-                  <div className="text-12 opacity-80">{player.name}</div>
-                  <div className="font-mono text-32 font-bold">{player.score}</div>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {players.map((player, index) => {
+                const stats = getPlayerStats(player);
+                const isActive = index === currentPlayerIndex;
+                return (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-lg transition-all ${
+                      isActive
+                        ? "bg-[#7C3AED] text-white"
+                        : "bg-background"
+                    }`}
+                  >
+                    <div className="text-12 opacity-80">{player.name}</div>
+                    {gameMode === "x01" ? (
+                      <div className="font-mono text-28 font-bold">{player.score}</div>
+                    ) : (
+                      <div className="font-mono text-28 font-bold">
+                        {player.currentNumber > 20 ? "🎯" : player.currentNumber}
+                      </div>
+                    )}
+                    <div className="text-11 opacity-70">
+                      {stats.hitRate}% hit • {stats.threeDartAvg} avg
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
 
-        {/* Current Turn */}
-        <Card className="bg-surface border-white/10 mb-6">
-          <CardContent className="p-6">
-            <div className="text-center mb-4">
-              <h3 className="text-24 font-bold mb-2">
-                Current: <span className="text-[#7C3AED]">{currentPlayer.name}</span>
-              </h3>
-              <div className="flex items-center justify-center gap-3 mb-2">
-                {currentPlayer.currentTurn.map((dart, i) => (
-                  <div key={i} className="font-mono text-32 font-bold text-[#F97316]">
-                    [{dart}]
-                  </div>
-                ))}
-                {Array.from({ length: 3 - currentPlayer.currentTurn.length }).map((_, i) => (
-                  <div key={i} className="font-mono text-32 font-bold text-text-secondary/30">
-                    [ ]
-                  </div>
-                ))}
-              </div>
-              {currentPlayer.currentTurn.length > 0 && (
-                <div className="text-20">
-                  Turn Total: <span className="font-mono font-bold">{turnTotal}</span>
+        {/* Current Turn & Live Stats */}
+        <Card className="bg-surface border-white/10 mb-4">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {/* Current Turn */}
+              <div className="text-center md:text-left">
+                <h3 className="text-20 font-bold mb-2">
+                  {gameMode === "round-the-clock" ? (
+                    <>Target: <span className="text-[#F97316]">
+                      {currentPlayer.currentNumber > 20 ? "🎯 Bullseye" : currentPlayer.currentNumber}
+                    </span></>
+                  ) : (
+                    <>Current: <span className="text-[#7C3AED]">{currentPlayer.name}</span></>
+                  )}
+                </h3>
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                  {currentPlayer.currentTurn.map((dart, i) => (
+                    <div 
+                      key={i} 
+                      className={`font-mono text-24 font-bold ${
+                        dart.isHit ? 'text-[#10B981]' : 'text-[#F97316]'
+                      }`}
+                    >
+                      [{dart.value}]
+                    </div>
+                  ))}
+                  {Array.from({ length: 3 - currentPlayer.currentTurn.length }).map((_, i) => (
+                    <div key={i} className="font-mono text-24 font-bold text-text-secondary/30">
+                      [ ]
+                    </div>
+                  ))}
                 </div>
-              )}
+                {currentPlayer.currentTurn.length > 0 && (
+                  <div className="text-16">
+                    Turn Total: <span className="font-mono font-bold">{turnTotal}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Live Stats */}
+              <div className="flex gap-4 justify-center">
+                <div className="text-center">
+                  <div className="text-11 text-text-secondary">Hit %</div>
+                  <div className="font-mono text-20 font-bold text-[#10B981]">{currentStats.hitRate}%</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-11 text-text-secondary">3-Dart Avg</div>
+                  <div className="font-mono text-20 font-bold text-[#7C3AED]">{currentStats.threeDartAvg}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-11 text-text-secondary">Rounds</div>
+                  <div className="font-mono text-20 font-bold text-[#F97316]">{currentStats.totalRounds}</div>
+                </div>
+              </div>
             </div>
 
             {checkoutHint && (
               <motion.div
-                className="bg-[#7C3AED]/20 border border-[#7C3AED] rounded-lg p-4 text-center"
+                className="bg-[#7C3AED]/20 border border-[#7C3AED] rounded-lg p-3 text-center mt-4"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div className="text-14 text-[#F97316] mb-1">💡 Checkout Hint</div>
-                <div className="font-mono text-18 font-bold">{checkoutHint}</div>
+                <div className="text-12 text-[#F97316] mb-1">💡 Checkout Hint</div>
+                <div className="font-mono text-16 font-bold">{checkoutHint}</div>
               </motion.div>
             )}
           </CardContent>
         </Card>
 
         {/* Dartboard */}
-        <div className="mb-6">
-          <Dartboard onScore={handleScore} disabled={!!winner} />
+        <div className="mb-4">
+          <Dartboard 
+            onScore={handleScore} 
+            disabled={!!winner}
+            highlightNumber={gameMode === "round-the-clock" && currentPlayer.currentNumber <= 20 ? currentPlayer.currentNumber : undefined}
+            highlightBull={gameMode === "round-the-clock" && currentPlayer.currentNumber > 20}
+          />
         </div>
 
         {/* Controls */}
@@ -515,7 +1028,7 @@ export default function AppPage() {
             className="flex-1"
           >
             <Undo className="w-4 h-4 mr-2" />
-            Undo Last
+            Undo
           </Button>
           <Button
             variant="outline"
