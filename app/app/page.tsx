@@ -309,63 +309,71 @@ export default function AppPage() {
     const newTurn = [...updatedPlayer.currentTurn, dartThrow];
     updatedPlayer.currentTurn = newTurn;
 
-    // Check if turn is complete (3 darts)
-    if (newTurn.length === 3) {
-      const turnTotal = newTurn.reduce((sum, dart) => sum + dart.value, 0);
-      const newScore = updatedPlayer.score - turnTotal;
+    // Calculate score after this dart
+    const turnTotal = newTurn.reduce((sum, dart) => sum + dart.value, 0);
+    const newScore = updatedPlayer.score - turnTotal;
 
-      // Check for valid finish
-      let isValidFinish = false;
-      if (newScore === 0) {
-        if (outType === "double") {
-          isValidFinish = dartScore.type === "double" || dartScore.type === "bull";
-        } else {
-          isValidFinish = true;
-        }
-      }
-
-      if (isValidFinish) {
-        updatedPlayer.score = 0;
-        updatedPlayer.history = [...updatedPlayer.history, newTurn];
-        updatedPlayer.currentTurn = [];
-        
-        const updatedPlayers = [...players];
-        updatedPlayers[currentPlayerIndex] = updatedPlayer;
-        setPlayers(updatedPlayers);
-        setWinner(updatedPlayer);
-        
-        // Save game result to DB
-        const winnerId = playerIdMapRef.current.get(updatedPlayer.name);
-        if (currentGameId && winnerId) {
-          endGame(currentGameId, "COMPLETED", winnerId);
-        }
-        
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#7C3AED', '#F97316', '#10B981'],
-        });
-      } else if (newScore < 0 || (outType === "double" && newScore === 0 && dartScore.type !== "double" && dartScore.type !== "bull")) {
-        // Bust - reset to score at start of turn
-        updatedPlayer.history = [...updatedPlayer.history, newTurn];
-        updatedPlayer.currentTurn = [];
-        
-        const updatedPlayers = [...players];
-        updatedPlayers[currentPlayerIndex] = updatedPlayer;
-        setPlayers(updatedPlayers);
-        setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+    // Check for valid finish (can happen on any dart, not just 3rd)
+    let isValidFinish = false;
+    if (newScore === 0) {
+      if (outType === "double") {
+        isValidFinish = dartScore.type === "double" || dartScore.type === "bull";
       } else {
-        updatedPlayer.score = newScore;
-        updatedPlayer.history = [...updatedPlayer.history, newTurn];
-        updatedPlayer.currentTurn = [];
-        
-        const updatedPlayers = [...players];
-        updatedPlayers[currentPlayerIndex] = updatedPlayer;
-        setPlayers(updatedPlayers);
-        setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+        isValidFinish = true;
       }
+    }
+
+    // Check for bust (went below 0, or exactly 0 without valid double-out)
+    const isBust = newScore < 0 || 
+      (newScore === 1 && outType === "double") || // Can't finish on 1 with double-out
+      (newScore === 0 && outType === "double" && dartScore.type !== "double" && dartScore.type !== "bull");
+
+    if (isValidFinish) {
+      // WINNER! Game ends immediately
+      updatedPlayer.score = 0;
+      updatedPlayer.history = [...updatedPlayer.history, newTurn];
+      updatedPlayer.currentTurn = [];
+      
+      const updatedPlayers = [...players];
+      updatedPlayers[currentPlayerIndex] = updatedPlayer;
+      setPlayers(updatedPlayers);
+      setWinner(updatedPlayer);
+      
+      // Save game result to DB
+      const winnerId = playerIdMapRef.current.get(updatedPlayer.name);
+      if (currentGameId && winnerId) {
+        endGame(currentGameId, "COMPLETED", winnerId);
+      }
+      
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#7C3AED', '#F97316', '#10B981'],
+      });
+    } else if (isBust) {
+      // Bust - score resets to start of turn, move to next player
+      updatedPlayer.history = [...updatedPlayer.history, newTurn];
+      updatedPlayer.currentTurn = [];
+      // Score stays the same (doesn't apply this turn's throws)
+      
+      const updatedPlayers = [...players];
+      updatedPlayers[currentPlayerIndex] = updatedPlayer;
+      setPlayers(updatedPlayers);
+      setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+    } else if (newTurn.length === 3) {
+      // Turn complete (3 darts thrown, no finish, no bust)
+      updatedPlayer.score = newScore;
+      updatedPlayer.history = [...updatedPlayer.history, newTurn];
+      updatedPlayer.currentTurn = [];
+      
+      const updatedPlayers = [...players];
+      updatedPlayers[currentPlayerIndex] = updatedPlayer;
+      setPlayers(updatedPlayers);
+      setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
     } else {
+      // Mid-turn: update score display but don't end turn yet
+      updatedPlayer.score = newScore;
       const updatedPlayers = [...players];
       updatedPlayers[currentPlayerIndex] = updatedPlayer;
       setPlayers(updatedPlayers);
