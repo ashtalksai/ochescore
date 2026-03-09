@@ -1,41 +1,22 @@
-FROM node:18-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+FROM node:22-alpine AS deps
 WORKDIR /app
-
-# Install dependencies
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm ci
 
-# Rebuild the source code only when needed
-FROM base AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npx prisma generate 2>/dev/null; npm run build
 
-# Build application
-RUN npm run build
-
-# Production image, copy all the files and run next
-FROM base AS runner
+FROM node:22-alpine
+RUN apk add --no-cache curl
 WORKDIR /app
-
 ENV NODE_ENV=production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
+ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+EXPOSE 3000
 CMD ["node", "server.js"]
